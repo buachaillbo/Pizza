@@ -38,11 +38,15 @@
 <body>
 <main>
   <h1>🇪🇺 → 🇦🇷 Euro to Argentine Peso</h1>
-  <p class="sub">Official rate vs. blue (informal) rate, with history.</p>
+  <p class="sub">Official rate vs. blue (informal) rate, with history. Enter euros or US dollars.</p>
 
   <div class="controls">
-    <div><label for="amt">Amount in euros</label>
-      <div class="amt"><span>€</span><input id="amt" type="number" inputmode="decimal" min="0" step="any" value="20"></div></div>
+    <div><label for="amt">Amount</label>
+      <div class="amt"><span id="sym">€</span><input id="amt" type="number" inputmode="decimal" min="0" step="any" value="20"></div></div>
+    <div><label>Currency</label>
+      <div class="seg" id="cur">
+        <button data-c="EUR" aria-pressed="true">€ Euro</button><button data-c="USD">$ Dollar</button>
+      </div></div>
     <div><label>Period</label>
       <div class="seg" id="range">
         <button data-d="30">1M</button><button data-d="90" aria-pressed="true">3M</button>
@@ -71,7 +75,9 @@ const $ = id => document.getElementById(id);
 const fmt = (n, d=0) => n.toLocaleString('en-GB', {minimumFractionDigits:d, maximumFractionDigits:d});
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const iso = d => d.toISOString().slice(0,10);
-let days = 90, series = null, demo = false;
+let days = 90, series = null, demo = false, cur = 'EUR';
+const view = p => cur==='EUR' ? {date:p.date,o:p.offEur,b:p.blueEur,fx:p.eurusd} : {date:p.date,o:p.official,b:p.blue,fx:1};
+const sym = () => cur==='EUR' ? '€' : 'US$';
 
 async function getJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(url+' '+r.status); return r.json(); }
 
@@ -110,20 +116,21 @@ function demoData(){ // offline fallback so the UI still works; clearly flagged
 function render(){
   if(!series) return;
   const amt = Math.max(0, parseFloat($('amt').value)||0);
-  const last = series[series.length-1];
-  $('offAmt').textContent = '$ '+fmt(amt*last.offEur);
-  $('blueAmt').textContent = '$ '+fmt(amt*last.blueEur);
-  $('offRate').textContent = `1 € = ${fmt(last.offEur,2)} ARS (USD ${fmt(last.official,0)} × ${fmt(last.eurusd,4)})`;
-  $('blueRate').textContent = `1 € = ${fmt(last.blueEur,2)} ARS (USD ${fmt(last.blue,0)} × ${fmt(last.eurusd,4)})`;
-  const gap = (last.blueEur/last.offEur-1)*100, extra = amt*(last.blueEur-last.offEur);
-  $('gap').innerHTML = `Blue gives <b>${fmt(gap,1)}%</b> more — <b>$ ${fmt(extra)}</b> extra on €${fmt(amt,2)}. <span class="rate">As of ${last.date}</span>`;
-  $('chartTitle').textContent = `What €${fmt(amt,2)} is worth in ARS — last ${$('range').querySelector('[aria-pressed=true]').textContent}`;
-  draw(series.slice(-days), amt);
+  const last = view(series[series.length-1]), usd = series[series.length-1];
+  $('offAmt').textContent = '$ '+fmt(amt*last.o);
+  $('blueAmt').textContent = '$ '+fmt(amt*last.b);
+  $('offRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.o,2)} ARS (USD ${fmt(usd.official,0)} × ${fmt(last.fx,4)})` : `US$1 = ${fmt(last.o,2)} ARS`;
+  $('blueRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.b,2)} ARS (USD ${fmt(usd.blue,0)} × ${fmt(last.fx,4)})` : `US$1 = ${fmt(last.b,2)} ARS`;
+  const gap = (last.b/last.o-1)*100, extra = amt*(last.b-last.o);
+  $('gap').innerHTML = `Blue gives <b>${fmt(gap,1)}%</b> more — <b>$ ${fmt(extra)}</b> extra on ${sym()}${fmt(amt,2)}. <span class="rate">As of ${last.date}</span>`;
+  $('chartTitle').textContent = `What ${sym()}${fmt(amt,2)} is worth in ARS — last ${$('range').querySelector('[aria-pressed=true]').textContent}`;
+  $('sym').textContent = cur==='EUR' ? '€' : '$';
+  draw(series.slice(-days).map(view), amt);
 }
 
 function draw(pts, amt){
   const W=800,H=340,m={l:64,r:12,t:12,b:26};
-  const ys = pts.flatMap(p=>[p.offEur*amt,p.blueEur*amt]);
+  const ys = pts.flatMap(p=>[p.o*amt,p.b*amt]);
   let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo||hi||1)*.08; lo=Math.max(0,lo-pad); hi+=pad;
   const x=i=>m.l+(W-m.l-m.r)*i/(pts.length-1), y=v=>H-m.b-(H-m.t-m.b)*(v-lo)/(hi-lo);
   const path=k=>pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]*amt).toFixed(1)).join('');
@@ -133,21 +140,23 @@ function draw(pts, amt){
   for(let i=0;i<=4;i++){ const idx=Math.round((pts.length-1)*i/4);
     g+=`<text x="${x(idx)}" y="${H-6}" text-anchor="${i==0?'start':i==4?'end':'middle'}" font-size="11" fill="${css('--mute')}">${pts[idx].date}</text>`; }
   $('chart').innerHTML = g +
-    `<path d="${path('offEur')}" fill="none" stroke="${css('--off')}" stroke-width="2.2"/>
-     <path d="${path('blueEur')}" fill="none" stroke="${css('--blue')}" stroke-width="2.2"/>
+    `<path d="${path('o')}" fill="none" stroke="${css('--off')}" stroke-width="2.2"/>
+     <path d="${path('b')}" fill="none" stroke="${css('--blue')}" stroke-width="2.2"/>
      <line id="cur" y1="${m.t}" y2="${H-m.b}" stroke="${css('--mute')}" stroke-dasharray="3" opacity="0"/>
      <rect id="hit" x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent"/>`;
   const hit=$('chart').querySelector('#hit'), cur=$('chart').querySelector('#cur');
   const move=e=>{ const r=$('chart').getBoundingClientRect(), cx=(e.touches?e.touches[0].clientX:e.clientX);
     const px=(cx-r.left)/r.width*W; const i=Math.max(0,Math.min(pts.length-1,Math.round((px-m.l)/(W-m.l-m.r)*(pts.length-1))));
     const p=pts[i]; cur.setAttribute('x1',x(i)); cur.setAttribute('x2',x(i)); cur.setAttribute('opacity',1);
-    $('tip').innerHTML=`${p.date} — Official <b style="color:${css('--off')}">$ ${fmt(p.offEur*amt)}</b> · Blue <b style="color:${css('--blue')}">$ ${fmt(p.blueEur*amt)}</b> · gap ${fmt((p.blueEur/p.offEur-1)*100,1)}%`; };
+    $('tip').innerHTML=`${p.date} — Official <b style="color:${css('--off')}">$ ${fmt(p.o*amt)}</b> · Blue <b style="color:${css('--blue')}">$ ${fmt(p.b*amt)}</b> · gap ${fmt((p.b/p.o-1)*100,1)}%`; };
   hit.addEventListener('mousemove',move); hit.addEventListener('touchmove',move,{passive:true}); hit.addEventListener('touchstart',move,{passive:true});
 }
 
 $('amt').addEventListener('input', render);
 $('range').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
   days=+b.dataset.d; $('range').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); render(); });
+$('cur').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  cur=b.dataset.c; $('cur').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); render(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
 
 (async()=>{
