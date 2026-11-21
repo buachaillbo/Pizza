@@ -83,16 +83,13 @@ async function getJSON(url){ const r = await fetch(url); if(!r.ok) throw new Err
 
 // Returns [{date, eurusd, official, blue, offEur, blueEur}] — daily, forward-filled.
 async function load(){
-  const [off, blu, fx, nowArr] = await Promise.all([
+  const [off, blu, fx] = await Promise.all([
     getJSON('https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial'),
     getJSON('https://api.argentinadatos.com/v1/cotizaciones/dolares/blue'),
-    getJSON('https://api.frankfurter.dev/v1/'+iso(new Date(Date.now()-1100*864e5))+'..?base=EUR&symbols=USD'),
-    getJSON('https://dolarapi.com/v1/dolares').catch(()=>[])
+    getJSON('https://api.frankfurter.dev/v1/'+iso(new Date(Date.now()-1100*864e5))+'..?base=EUR&symbols=USD')
   ]);
   const toMap = a => Object.fromEntries(a.map(x => [x.fecha, x.venta]));
   const O = toMap(off), B = toMap(blu);
-  for (const x of nowArr){ const d = (x.fechaActualizacion||'').slice(0,10);
-    if(x.casa==='oficial') O[d]=x.venta; if(x.casa==='blue') B[d]=x.venta; }
   const F = Object.fromEntries(Object.entries(fx.rates).map(([d,r]) => [d, r.USD]));
   const out = []; let o,b,f;
   const start = new Date(Date.now()-1095*864e5), end = new Date();
@@ -160,7 +157,7 @@ $('cur').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
 
 (async()=>{
-  try{ series = await load(); $('note').textContent='Rates: ARS "venta" (selling) rate per US dollar from ArgentinaDatos / DolarAPI, times the ECB EUR/USD reference rate (Frankfurter). Euro value = USD rate × EUR/USD. Real-life cash exchange rates and spreads will differ.'; }
+  try{ series = await load(); $('note').textContent='Rates: ARS "venta" (selling) rate per US dollar from ArgentinaDatos (daily closing values, the same source for the whole chart), times the ECB EUR/USD reference rate (Frankfurter). Euro value = USD rate × EUR/USD. Real-life cash exchange rates and spreads will differ.'; }
   catch(err){ console.error(err); demo=true; series=demoData();
     $('note').innerHTML='<span class="warn"><b>Could not reach the live rate APIs</b> — showing made-up demo numbers. Check your connection and reload.</span>'; }
   render();
