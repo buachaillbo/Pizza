@@ -68,8 +68,7 @@
   .seg button[aria-pressed=true]{color:var(--bg)}
   button:focus-visible,input:focus-visible{outline:2px solid var(--off);outline-offset:2px}
 
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
   .card{padding:20px 22px;position:relative;overflow:hidden}
   .card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--c)}
   .card::after{content:"";position:absolute;right:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:var(--c);opacity:.09}
@@ -116,7 +115,7 @@
 <main>
   <header>
     <div class="eyebrow"><i></i>Argentine peso · live rates</div>
-    <h1><span id="h1a">Euros to pesos</span>: <span class="a">official</span> vs <span class="b">blue</span></h1>
+    <h1><span id="h1a">Euros to pesos</span>: <span class="b">blue</span> vs <span class="a">official</span></h1>
   </header>
 
   <section class="panel" aria-label="Controls">
@@ -136,24 +135,24 @@
   </section>
 
   <section class="grid">
-    <article class="card off"><div class="tag"><i class="dot"></i>Official<span class="best" id="bestOff" hidden></span></div>
-      <div class="big"><small id="offUnit">ARS</small><span class="n" id="offAmt">…</span></div><div class="rate" id="offRate"></div></article>
     <article class="card blue"><div class="tag"><i class="dot"></i>Blue<span class="best" id="bestBlue"></span></div>
       <div class="big"><small id="blueUnit">ARS</small><span class="n" id="blueAmt">…</span></div><div class="rate" id="blueRate"></div></article>
+    <article class="card off"><div class="tag"><i class="dot"></i>Official<span class="best" id="bestOff" hidden></span></div>
+      <div class="big"><small id="offUnit">ARS</small><span class="n" id="offAmt">…</span></div><div class="rate" id="offRate"></div></article>
   </section>
 
   <section class="card gap">
     <div class="gaphead"><b id="gapPct">…</b><span id="gapTxt"></span></div>
     <div class="bars">
-      <div class="bar"><i id="barOff" style="background:var(--off)"></i></div>
       <div class="bar"><i id="barBlue" style="background:var(--blue)"></i></div>
+      <div class="bar"><i id="barOff" style="background:var(--off)"></i></div>
     </div>
   </section>
 
   <section class="card chartcard">
     <div class="charthead">
       <div class="headl"><h2 id="chartTitle">Value over time</h2>
-        <div class="legend"><span><i style="background:var(--off)"></i>Official</span><span><i style="background:var(--blue)"></i>Blue</span></div></div>
+        <div class="legend"><span><i style="background:var(--blue)"></i>Blue</span><span><i style="background:var(--off)"></i>Official</span></div></div>
       <div class="seg" id="range" role="group" aria-label="History period"><span class="thumb"></span>
         <button data-d="30" aria-pressed="false">1M</button><button data-d="90" aria-pressed="true">3M</button>
         <button data-d="180" aria-pressed="false">6M</button><button data-d="365" aria-pressed="false">1Y</button><button data-d="1095" aria-pressed="false">3Y</button>
@@ -294,8 +293,8 @@ function draw(pts, dd){
     curL.setAttribute('x1',x(i)); curL.setAttribute('x2',x(i)); curL.setAttribute('opacity',1);
     d1.setAttribute('cx',x(i)); d1.setAttribute('cy',y(p.o)); d2.setAttribute('cx',x(i)); d2.setAttribute('cy',y(p.b)); d1.setAttribute('opacity',1); d2.setAttribute('opacity',1);
     tt.innerHTML=`<div class="d">${p.date}</div>
-      <div class="r"><span style="color:${off}">● Official</span><b>${fmt(p.o,dd)}</b></div>
       <div class="r"><span style="color:${blue}">● Blue</span><b>${fmt(p.b,dd)}</b></div>
+      <div class="r"><span style="color:${off}">● Official</span><b>${fmt(p.o,dd)}</b></div>
       <div class="g">+${fmt((Math.max(p.o,p.b)/Math.min(p.o,p.b)-1)*100,1)}% on ${dir==='fwd'?'blue':'official'}</div>`;
     const pct=x(i)/W*100; tt.style.left = pct>58 ? `calc(${pct}% - ${tt.offsetWidth+14}px)` : `calc(${pct}% + 14px)`; tt.style.opacity=1; };
   const hide=()=>{ curL.setAttribute('opacity',0); d1.setAttribute('opacity',0); d2.setAttribute('opacity',0); tt.style.opacity=0; };
