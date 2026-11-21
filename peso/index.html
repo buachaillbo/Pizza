@@ -90,7 +90,9 @@
   .bar i{display:block;height:100%;border-radius:999px;width:0;transition:width .6s cubic-bezier(.3,.9,.3,1)}
 
   .chartcard{padding:18px 18px 12px}
-  .charthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;padding:0 4px 8px}
+  .charthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;padding:0 4px 10px}
+  .headl{display:grid;gap:6px}
+  .charthead .seg{flex:0 1 330px;min-width:min(100%,260px)}
   .charthead h2{font:600 1rem var(--display);margin:0}
   .legend{display:flex;gap:16px;font-size:.85rem;color:var(--mute)}
   .legend span{display:inline-flex;align-items:center;gap:7px}
@@ -130,11 +132,6 @@
         <div class="seg" id="cur"><span class="thumb"></span>
           <button data-c="EUR" aria-pressed="true">€ Euro</button><button data-c="USD" aria-pressed="false">$ US dollar</button>
         </div></div>
-      <div><span class="lbl">History</span>
-        <div class="seg" id="range"><span class="thumb"></span>
-          <button data-d="30" aria-pressed="false">1M</button><button data-d="90" aria-pressed="true">3M</button>
-          <button data-d="180" aria-pressed="false">6M</button><button data-d="365" aria-pressed="false">1Y</button><button data-d="1095" aria-pressed="false">3Y</button>
-        </div></div>
     </div>
   </section>
 
@@ -154,8 +151,14 @@
   </section>
 
   <section class="card chartcard">
-    <div class="charthead"><h2 id="chartTitle">Value over time</h2>
-      <div class="legend"><span><i style="background:var(--off)"></i>Official</span><span><i style="background:var(--blue)"></i>Blue</span></div></div>
+    <div class="charthead">
+      <div class="headl"><h2 id="chartTitle">Value over time</h2>
+        <div class="legend"><span><i style="background:var(--off)"></i>Official</span><span><i style="background:var(--blue)"></i>Blue</span></div></div>
+      <div class="seg" id="range" role="group" aria-label="History period"><span class="thumb"></span>
+        <button data-d="30" aria-pressed="false">1M</button><button data-d="90" aria-pressed="true">3M</button>
+        <button data-d="180" aria-pressed="false">6M</button><button data-d="365" aria-pressed="false">1Y</button><button data-d="1095" aria-pressed="false">3Y</button>
+      </div>
+    </div>
     <div class="wrap" id="wrap">
       <svg id="chart" viewBox="0 0 800 340" role="img" aria-label="Line chart of the official and blue values over time"></svg>
       <div class="tt" id="tt"></div>
