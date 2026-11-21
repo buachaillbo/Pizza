@@ -49,7 +49,10 @@
   .swap:hover{border-color:var(--off)}
   .swap svg{width:18px;height:18px;transition:transform .4s cubic-bezier(.3,.9,.3,1)}
   .swap[data-flip="1"] svg{transform:rotate(180deg)}
-  .best[hidden]{display:none}
+  [hidden]{display:none!important}
+  .done{display:none;flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);place-items:center;cursor:pointer}
+  .done svg{width:20px;height:20px}
+  .amt:focus-within .done{display:grid}
   .amt{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid var(--line);border-radius:16px;padding:6px 16px;transition:border-color .15s,box-shadow .15s}
   .amt:focus-within{border-color:var(--off);box-shadow:0 0 0 4px var(--off-soft)}
   .amt .sym{font:600 1.5rem var(--display);color:var(--mute);min-width:1.6ch}
@@ -66,7 +69,8 @@
   .seg button{position:relative;z-index:1;flex:1;font:600 .9rem var(--body);color:var(--mute);background:transparent;border:0;border-radius:999px;padding:10px 12px;cursor:pointer;transition:color .2s;white-space:nowrap}
   .seg button:hover{color:var(--ink)}
   .seg button[aria-pressed=true]{color:var(--bg)}
-  button:focus-visible,input:focus-visible{outline:2px solid var(--off);outline-offset:2px}
+  button:focus-visible{outline:2px solid var(--off);outline-offset:2px}
+  input:focus-visible{outline:0}
 
   .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
   .card{padding:20px 22px;position:relative;overflow:hidden}
@@ -123,7 +127,8 @@
       <div class="lblrow"><label for="amt">You have</label>
         <button class="swap" id="swap" type="button" data-flip="0" aria-label="Flip direction between foreign currency and pesos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>Flip</button></div>
-      <div class="amt"><span class="sym" id="sym">€</span><input id="amt" type="number" inputmode="decimal" min="0" step="any" value="100" aria-label="Amount"></div>
+      <div class="amt"><span class="sym" id="sym">€</span><input id="amt" type="number" inputmode="decimal" enterkeyhint="done" min="0" step="any" value="100" aria-label="Amount">
+        <button class="done" id="done" type="button" aria-label="Done, close keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button></div>
       <div class="chips" id="chips"></div>
     </div>
     <div class="stack">
@@ -307,13 +312,23 @@ function segInit(seg, onPick){
     seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); placeThumb(seg); onPick(b); });
 }
 segInit($('cur'), b=>{ cur=b.dataset.c; render(); });
+// Flip direction; the amount is converted at the official rate so flipping back returns the original figure.
+function setDir(nd){
+  if(!series || nd===dir) return;
+  const amt = Math.max(0, parseFloat($('amt').value)||0), v = conv(amt, view(series[series.length-1]).o);
+  $('amt').value = dir==='fwd' ? Math.round(v) : Math.round(v*100)/100;
+  dir = nd; $('swap').dataset.flip = dir==='rev' ? 1 : 0; render();
+}
 segInit($('range'), b=>{ days=+b.dataset.d; render(); });
 $('chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; $('amt').value=b.dataset.v; render(); });
 $('amt').addEventListener('input', render);
-$('swap').addEventListener('click', ()=>{ if(!series) return;
-  const amt = Math.max(0, parseFloat($('amt').value)||0), v = conv(amt, view(series[series.length-1]).o);
-  $('amt').value = dir==='fwd' ? Math.round(v) : Math.round(v*100)/100;
-  dir = dir==='fwd' ? 'rev' : 'fwd'; $('swap').dataset.flip = dir==='rev' ? 1 : 0; render(); });
+// Mobile number keypads have no Done key, so give the amount box a check button and close on Enter or a tap elsewhere.
+$('amt').addEventListener('focus', ()=>setTimeout(()=>$('amt').select(),0));
+$('done').addEventListener('pointerdown', e=>e.preventDefault());
+$('done').addEventListener('click', ()=>$('amt').blur());
+$('amt').addEventListener('keydown', e=>{ if(e.key==='Enter') $('amt').blur(); });
+document.addEventListener('pointerdown', e=>{ if(document.activeElement===$('amt') && !e.target.closest('.amt')) $('amt').blur(); });
+$('swap').addEventListener('click', ()=> setDir(dir==='fwd' ? 'rev' : 'fwd'));
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
 const thumbs=()=>{ placeThumb($('cur')); placeThumb($('range')); };
 addEventListener('resize', thumbs); thumbs(); document.fonts && document.fonts.ready.then(thumbs);
