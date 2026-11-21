@@ -43,13 +43,15 @@
   @media(max-width:700px){.panel{grid-template-columns:1fr}}
   label,.lbl{display:block;font:600 .72rem/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0 0 9px}
 
-  .lblrow{display:flex;justify-content:space-between;align-items:center;margin:-10px 0 -1px;gap:8px}
+  .lblrow{display:flex;justify-content:space-between;align-items:center;margin:-14px 0 -9px;gap:8px}
   .lblrow label{margin:0}
-  .swap{display:inline-flex;align-items:center;gap:8px;font:600 .85rem var(--body);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:7px 14px 7px 10px;cursor:pointer;transition:border-color .15s,background .15s}
+  .swap{display:inline-flex;align-items:center;gap:8px;min-height:44px;font:600 .9rem var(--body);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:0 16px 0 12px;white-space:nowrap;cursor:pointer;transition:border-color .15s,background .15s}
   .swap:hover{border-color:var(--off)}
   .swap svg{width:18px;height:18px;transition:transform .4s cubic-bezier(.3,.9,.3,1)}
   .swap[data-flip="1"] svg{transform:rotate(180deg)}
   [hidden]{display:none!important}
+  .convnote{margin-top:12px;font-size:.84rem;color:var(--mute);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+  .convnote button{font:600 .84rem var(--body);color:var(--off);background:none;border:0;padding:6px 0;cursor:pointer;text-decoration:underline}
   .done{display:none;flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);place-items:center;cursor:pointer}
   .done svg{width:20px;height:20px}
   .amt:focus-within .done{display:grid}
@@ -81,6 +83,9 @@
   .dot{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 22%,transparent)}
   .best{margin-left:auto;font:600 .7rem var(--body);letter-spacing:.06em;color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent);border-radius:999px;padding:4px 9px}
   .big{font:700 clamp(2rem,6vw,2.75rem)/1.1 var(--display);letter-spacing:-.025em;margin:14px 0 4px;font-variant-numeric:tabular-nums}
+  .big small,.big .n{display:inline-block}
+  .big.pop small,.big.pop .n{animation:pop .35s ease-out}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   .big small{font:600 .9rem var(--body);letter-spacing:.08em;color:var(--mute);margin-right:8px}
   .rate{font-size:.85rem;color:var(--mute);font-variant-numeric:tabular-nums}
 
@@ -112,6 +117,18 @@
   .warn{color:var(--warn)}
   .pulse{animation:pulse 2s ease-out infinite;transform-box:fill-box;transform-origin:center}
   @keyframes pulse{0%{transform:scale(1);opacity:.55}100%{transform:scale(3);opacity:0}}
+  /* Typing on a phone: the keyboard covers about half the screen, so keep only the amount and the converted figures on show. */
+  @media(max-width:700px){
+    body.typing main{padding-top:10px;gap:10px}
+    body.typing header,body.typing .chips,body.typing .stack,body.typing .gap,body.typing .chartcard,body.typing .note,body.typing .best,body.typing .card .rate,body.typing .card::after{display:none}
+    body.typing .panel{padding:12px 14px}
+    body.typing .lblrow{margin:0 0 8px}
+    body.typing .amt input{font-size:2rem;padding:2px 0}
+    body.typing .grid{gap:8px}
+    body.typing .card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px}
+    body.typing .card .big{margin:0;font-size:1.7rem}
+    body.typing .convnote{margin-top:8px;font-size:.78rem}
+  }
   @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -125,11 +142,12 @@
   <section class="panel" aria-label="Controls">
     <div>
       <div class="lblrow"><label for="amt">You have</label>
-        <button class="swap" id="swap" type="button" data-flip="0" aria-label="Flip direction between foreign currency and pesos">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>Flip</button></div>
+        <button class="swap" id="swap" type="button" data-flip="0" aria-label="Flip direction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg><span id="swapTxt">€ → ARS</span></button></div>
       <div class="amt"><span class="sym" id="sym">€</span><input id="amt" type="number" inputmode="decimal" enterkeyhint="done" min="0" step="any" value="100" aria-label="Amount">
         <button class="done" id="done" type="button" aria-label="Done, close keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button></div>
       <div class="chips" id="chips"></div>
+      <div class="convnote" id="convnote" role="status" hidden></div>
     </div>
     <div class="stack">
       <div><span class="lbl">Currency</span>
@@ -179,27 +197,30 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 const iso = d => d.toISOString().slice(0,10);
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let days = 90, series = null, demo = false, cur = 'EUR';
-const view = p => cur==='EUR' ? {date:p.date,o:p.offEur,b:p.blueEur,fx:p.eurusd} : {date:p.date,o:p.official,b:p.blue,fx:1};
+// Turning euros/dollars into pesos, a dealer pays the lower "compra" (buy) rate; buying euros/dollars with pesos costs the higher "venta" (sell) rate.
+const rateO = p => dir==='fwd' ? p.officialBuy : p.official;
+const rateB = p => dir==='fwd' ? p.blueBuy : p.blue;
+const view = p => { const fx = cur==='EUR' ? p.eurusd : 1; return {date:p.date, o:rateO(p)*fx, b:rateB(p)*fx, fx}; };
 const sym = () => cur==='EUR' ? '€' : 'US$';
 
 async function getJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(url+' '+r.status); return r.json(); }
 
-// Returns [{date, eurusd, official, blue, offEur, blueEur}] — daily, forward-filled.
+// Returns [{date, eurusd, official, officialBuy, blue, blueBuy}] — daily, forward-filled. ARS per US dollar; Buy = compra, the other = venta.
 async function load(){
   const [off, blu, fx] = await Promise.all([
     getJSON('https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial'),
     getJSON('https://api.argentinadatos.com/v1/cotizaciones/dolares/blue'),
     getJSON('https://api.frankfurter.dev/v1/'+iso(new Date(Date.now()-1100*864e5))+'..?base=EUR&symbols=USD')
   ]);
-  const toMap = a => Object.fromEntries(a.map(x => [x.fecha, x.venta]));
-  const O = toMap(off), B = toMap(blu);
+  const toMap = (a,k) => Object.fromEntries(a.map(x => [x.fecha, x[k] ?? x.venta]));
+  const O = toMap(off,'venta'), OC = toMap(off,'compra'), B = toMap(blu,'venta'), BC = toMap(blu,'compra');
   const F = Object.fromEntries(Object.entries(fx.rates).map(([d,r]) => [d, r.USD]));
-  const out = []; let o,b,f;
+  const out = []; let o,oc,b,bc,f;
   const start = new Date(Date.now()-1095*864e5), end = new Date();
   for (let t=start; t<=end; t=new Date(+t+864e5)){
     const d = iso(t);
-    o = O[d] ?? o; b = B[d] ?? b; f = F[d] ?? f;
-    if (o && b && f) out.push({date:d, eurusd:f, official:o, blue:b, offEur:o*f, blueEur:b*f});
+    o = O[d] ?? o; oc = OC[d] ?? oc; b = B[d] ?? b; bc = BC[d] ?? bc; f = F[d] ?? f;
+    if (o && oc && b && bc && f) out.push({date:d, eurusd:f, official:o, officialBuy:oc, blue:b, blueBuy:bc});
   }
   if (out.length < 10) throw new Error('not enough data');
   return out;
@@ -209,7 +230,7 @@ function demoData(){ // offline fallback so the UI still works; clearly flagged
   const out=[]; let o=1000,b=1180,f=1.08;
   for(let i=1095;i>=0;i--){ const d=iso(new Date(Date.now()-i*864e5));
     o*=1+0.0012+Math.sin(i)*0.0004; b=o*(1.12+0.1*Math.sin(i/60)); f=1.08+0.06*Math.sin(i/200);
-    out.push({date:d,eurusd:f,official:o,blue:b,offEur:o*f,blueEur:b*f}); }
+    out.push({date:d,eurusd:f,official:o,officialBuy:o*0.97,blue:b,blueBuy:b*0.99}); }
   return out;
 }
 
@@ -247,9 +268,16 @@ function render(){
   const unit = dir==='fwd' ? 'ARS' : sym();
   $('h1a').textContent = dir==='fwd' ? `${name} to pesos` : `Pesos to ${name.toLowerCase()}`;
   $('offUnit').textContent = unit; $('blueUnit').textContent = unit;
+  const key = dir+cur;
+  if (render._k !== undefined && render._k !== key){ // direction or currency changed: show the new figures at once, don't count through the old ones
+    for (const id of ['offAmt','blueAmt']) $(id)._v = undefined;
+    for (const el of document.querySelectorAll('.big')){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+  }
+  render._k = key;
   tween($('offAmt'), vo, d); tween($('blueAmt'), vb, d);
-  $('offRate').textContent  = cur==='EUR' ? `1 € = ${fmt(last.o,2)} ARS  ·  USD ${fmt(lastRaw.official,0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.o,2)} ARS`;
-  $('blueRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.b,2)} ARS  ·  USD ${fmt(lastRaw.blue,0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.b,2)} ARS`;
+  const kind = dir==='fwd' ? 'buy rate' : 'sell rate';
+  $('offRate').textContent  = (cur==='EUR' ? `1 € = ${fmt(last.o,2)} ARS  ·  USD ${fmt(rateO(lastRaw),0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.o,2)} ARS`) + `  ·  ${kind}`;
+  $('blueRate').textContent = (cur==='EUR' ? `1 € = ${fmt(last.b,2)} ARS  ·  USD ${fmt(rateB(lastRaw),0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.b,2)} ARS`) + `  ·  ${kind}`;
   const gap = (last.b/last.o-1)*100, extra = Math.abs(vb-vo);
   $('gapPct').textContent = `+${fmt(gap,1)}% on ${dir==='fwd'?'blue':'official'}`;
   $('gapTxt').textContent = dir==='fwd'
@@ -260,6 +288,8 @@ function render(){
   const more = dir==='fwd' ? 'MORE PESOS' : 'MORE '+name.toUpperCase();
   $('bestBlue').textContent = more; $('bestOff').textContent = more;
   $('bestBlue').hidden = dir!=='fwd'; $('bestOff').hidden = dir!=='rev';
+  $('swapTxt').textContent = dir==='fwd' ? `${sym()} → ARS` : `ARS → ${sym()}`;
+  $('swap').setAttribute('aria-label', dir==='fwd' ? `Converting ${name.toLowerCase()} to pesos. Tap to flip to pesos to ${name.toLowerCase()}.` : `Converting pesos to ${name.toLowerCase()}. Tap to flip to ${name.toLowerCase()} to pesos.`);
   $('sym').textContent = dir==='fwd' ? (cur==='EUR' ? '€' : '$') : 'ARS';
   const per = $('range').querySelector('[aria-pressed=true]').textContent;
   $('chartTitle').textContent = dir==='fwd' ? `${sym()}${fmt(amt,2)} in pesos, last ${per}` : `ARS ${fmt(amt)} in ${name.toLowerCase()}, last ${per}`;
@@ -312,29 +342,42 @@ function segInit(seg, onPick){
     seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); placeThumb(seg); onPick(b); });
 }
 segInit($('cur'), b=>{ cur=b.dataset.c; render(); });
-// Flip direction; the amount is converted at the official rate so flipping back returns the original figure.
+// Flip direction. The amount is converted at the official rate, and flipping straight back restores the original figure.
+let memo = null;
 function setDir(nd){
   if(!series || nd===dir) return;
   const amt = Math.max(0, parseFloat($('amt').value)||0), v = conv(amt, view(series[series.length-1]).o);
-  $('amt').value = dir==='fwd' ? Math.round(v) : Math.round(v*100)/100;
+  const produced = dir==='fwd' ? Math.round(v) : Math.round(v*100)/100;
+  const money = (n, to) => to==='ars' ? `ARS ${fmt(n)}` : `${sym()}${fmt(n,2)}`;
+  const from = money(amt, dir==='fwd' ? 'foreign' : 'ars');
+  if (memo && memo.dir===dir && Math.abs(amt-memo.produced)<1e-9){ // untouched since the last flip: go back to what the user typed
+    $('amt').value = memo.amt; memo = null; $('convnote').hidden = true;
+  } else {
+    $('amt').value = produced; memo = {amt, produced, dir:nd};
+    $('convnote').innerHTML = `<span>${from} converted to ${money(produced, nd==='rev' ? 'ars' : 'foreign')} at the official rate.</span><button type="button" id="undo">Undo</button>`;
+    $('convnote').hidden = false;
+  }
   dir = nd; $('swap').dataset.flip = dir==='rev' ? 1 : 0; render();
 }
+$('convnote').addEventListener('click', e=>{ if(e.target.id==='undo') setDir(dir==='fwd' ? 'rev' : 'fwd'); });
 segInit($('range'), b=>{ days=+b.dataset.d; render(); });
-$('chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; $('amt').value=b.dataset.v; render(); });
-$('amt').addEventListener('input', render);
+$('chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; $('amt').value=b.dataset.v; $('convnote').hidden = true; render(); });
+$('amt').addEventListener('input', ()=>{ $('convnote').hidden = true; render(); });
 // Mobile number keypads have no Done key, so give the amount box a check button and close on Enter or a tap elsewhere.
-$('amt').addEventListener('focus', ()=>setTimeout(()=>$('amt').select(),0));
-$('done').addEventListener('pointerdown', e=>e.preventDefault());
+$('amt').addEventListener('focus', ()=>{ document.body.classList.add('typing'); requestAnimationFrame(()=>scrollTo(0,0)); setTimeout(()=>$('amt').select(),0); });
+$('amt').addEventListener('blur', ()=>document.body.classList.remove('typing'));
+// Keep keyboard focus (and the compact typing layout) when these are tapped, so the page doesn't move under the finger.
+for (const el of [$('done'), $('swap'), $('convnote')]) el.addEventListener('pointerdown', e=>e.preventDefault());
 $('done').addEventListener('click', ()=>$('amt').blur());
 $('amt').addEventListener('keydown', e=>{ if(e.key==='Enter') $('amt').blur(); });
-document.addEventListener('pointerdown', e=>{ if(document.activeElement===$('amt') && !e.target.closest('.amt')) $('amt').blur(); });
+document.addEventListener('pointerdown', e=>{ if(document.activeElement===$('amt') && !e.target.closest('.amt, .swap, .convnote')) $('amt').blur(); });
 $('swap').addEventListener('click', ()=> setDir(dir==='fwd' ? 'rev' : 'fwd'));
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
 const thumbs=()=>{ placeThumb($('cur')); placeThumb($('range')); };
 addEventListener('resize', thumbs); thumbs(); document.fonts && document.fonts.ready.then(thumbs);
 
 (async()=>{
-  try{ series = await load(); $('note').textContent='Rates: ARS "venta" (selling) rate per US dollar from ArgentinaDatos (daily values, one source for the whole chart), times the ECB EUR/USD reference rate from Frankfurter. Euro value = USD rate × EUR/USD. Real-life cash exchange rates and spreads will differ.'; }
+  try{ series = await load(); $('note').textContent='Rates: ARS per US dollar from ArgentinaDatos (daily values, one source for the whole chart), times the ECB EUR/USD reference rate from Frankfurter. Euro value = USD rate × EUR/USD. Turning euros or dollars into pesos uses the dealer buy rate (compra); turning pesos into euros or dollars uses the sell rate (venta). Real-life cash exchange rates and spreads will differ.'; }
   catch(err){ console.error(err); demo=true; series=demoData();
     $('note').innerHTML='<span class="warn"><b>Could not reach the live rate APIs.</b> Showing made-up demo numbers. Check your connection and reload.</span>'; }
   render(); thumbs();
