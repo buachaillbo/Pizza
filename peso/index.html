@@ -4,69 +4,157 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>EUR → ARS: Official vs Blue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#f6f7f9;--card:#fff;--ink:#14181f;--mute:#667085;--line:#e4e7ec;--off:#2563eb;--blue:#0ea5a4;--warn:#b45309}
-  @media(prefers-color-scheme:dark){:root{--bg:#0e1116;--card:#171b22;--ink:#eef1f5;--mute:#9aa4b2;--line:#2a313c;--off:#6ea0ff;--blue:#35d0cf;--warn:#f0b35a}}
+  /* Layout: one centred column. Controls panel, two rate cards, a gap bar, then the chart. */
+  :root{
+    --bg:#eef1f6; --surface:#ffffff; --surface2:#f6f8fb; --ink:#0b1220; --mute:#5b6577; --line:#dde3ec;
+    --off:#ea580c; --off-soft:rgba(234,88,12,.10);
+    --blue:#2563eb; --blue-soft:rgba(37,99,235,.12);
+    --good:#0f9d6a; --warn:#b45309;
+    --shadow:0 1px 2px rgba(11,18,32,.05),0 8px 24px -12px rgba(11,18,32,.14);
+    --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+    color-scheme:light;
+  }
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#090e19; --surface:#111a2b; --surface2:#16213a; --ink:#eaf0fb; --mute:#93a0b8; --line:#23314b;
+    --off:#fb923c; --off-soft:rgba(251,146,60,.14); --blue:#5b9bff; --blue-soft:rgba(91,155,255,.15);
+    --good:#34d399; --warn:#f0b35a; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -14px rgba(0,0,0,.6); color-scheme:dark}}
+  :root[data-theme="dark"]{
+    --bg:#090e19; --surface:#111a2b; --surface2:#16213a; --ink:#eaf0fb; --mute:#93a0b8; --line:#23314b;
+    --off:#fb923c; --off-soft:rgba(251,146,60,.14); --blue:#5b9bff; --blue-soft:rgba(91,155,255,.15);
+    --good:#34d399; --warn:#f0b35a; --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -14px rgba(0,0,0,.6); color-scheme:dark}
+
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,sans-serif}
-  main{max-width:880px;margin:0 auto;padding:24px 16px 48px}
-  h1{font-size:1.4rem;margin:0 0 4px}
-  .sub{color:var(--mute);margin:0 0 20px;font-size:.9rem}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .controls{display:flex;flex-wrap:wrap;gap:16px;align-items:end;margin-bottom:16px}
-  label{display:block;font-size:.8rem;color:var(--mute);margin-bottom:4px}
-  .amt{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;padding:0 10px;background:var(--bg)}
-  .amt span{color:var(--mute);font-size:1.2rem}
-  input{font:inherit;font-size:1.3rem;width:9ch;border:0;background:transparent;color:var(--ink);padding:8px 6px;outline:0}
-  .seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-  .seg button{font:inherit;border:0;background:var(--bg);color:var(--ink);padding:10px 14px;cursor:pointer}
-  .seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-  @media(max-width:560px){.grid{grid-template-columns:1fr}}
-  .big{font-size:1.9rem;font-weight:650;font-variant-numeric:tabular-nums}
-  .tag{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--mute)}
-  .dot{width:10px;height:10px;border-radius:50%}
-  .rate{font-size:.85rem;color:var(--mute);margin-top:2px}
-  .gap{margin-bottom:16px;text-align:center}
-  .gap b{font-size:1.1rem}
-  svg{width:100%;height:auto;display:block}
-  .tip{font-size:.85rem;min-height:1.3em;color:var(--mute);margin-top:6px;font-variant-numeric:tabular-nums}
-  .note{font-size:.78rem;color:var(--mute);margin-top:14px}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(900px 380px at 15% -10%,var(--off-soft),transparent 70%),radial-gradient(800px 360px at 95% -5%,var(--blue-soft),transparent 70%);
+    background-repeat:no-repeat}
+  main{max-width:920px;margin:0 auto;padding-block:36px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+  header{padding:4px 2px 8px}
+  .eyebrow{font:600 .72rem/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);display:flex;gap:8px;align-items:center}
+  .eyebrow i{width:22px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--off),var(--blue))}
+  h1{font:700 clamp(1.7rem,4.6vw,2.6rem)/1.08 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+  h1 .a{color:var(--off)} h1 .b{color:var(--blue)}
+  .sub{color:var(--mute);margin:0;max-width:60ch}
+
+  .panel,.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}
+  .panel{padding:18px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px 24px}
+  @media(max-width:700px){.panel{grid-template-columns:1fr}}
+  label,.lbl{display:block;font:600 .72rem/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0 0 9px}
+
+  .amt{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid var(--line);border-radius:16px;padding:6px 16px;transition:border-color .15s,box-shadow .15s}
+  .amt:focus-within{border-color:var(--off);box-shadow:0 0 0 4px var(--off-soft)}
+  .amt .sym{font:600 1.5rem var(--display);color:var(--mute);min-width:1.6ch}
+  .amt input{flex:1;min-width:0;width:100%;font:700 2.3rem/1.2 var(--display);letter-spacing:-.02em;color:var(--ink);background:transparent;border:0;outline:0;padding:6px 0;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+  .amt input::-webkit-outer-spin-button,.amt input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .chip{font:500 .9rem var(--body);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer;transition:transform .12s,border-color .15s,background .15s}
+  .chip:hover{border-color:var(--off);transform:translateY(-1px)}
+  .chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+  .stack{display:grid;gap:16px;align-content:start}
+  .seg{position:relative;display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:4px;gap:0}
+  .seg .thumb{position:absolute;top:4px;bottom:4px;left:4px;width:0;border-radius:999px;background:var(--ink);transition:left .28s cubic-bezier(.3,.9,.3,1),width .28s cubic-bezier(.3,.9,.3,1);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .seg button{position:relative;z-index:1;flex:1;font:600 .9rem var(--body);color:var(--mute);background:transparent;border:0;border-radius:999px;padding:10px 12px;cursor:pointer;transition:color .2s;white-space:nowrap}
+  .seg button:hover{color:var(--ink)}
+  .seg button[aria-pressed=true]{color:var(--bg)}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--off);outline-offset:2px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+  .card{padding:20px 22px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--c)}
+  .card::after{content:"";position:absolute;right:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:var(--c);opacity:.09}
+  .card.off{--c:var(--off)} .card.blue{--c:var(--blue)}
+  .tag{display:flex;align-items:center;gap:8px;font:600 .8rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 22%,transparent)}
+  .best{margin-left:auto;font:600 .7rem var(--body);letter-spacing:.06em;color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent);border-radius:999px;padding:4px 9px}
+  .big{font:700 clamp(2rem,6vw,2.75rem)/1.1 var(--display);letter-spacing:-.025em;margin:14px 0 4px;font-variant-numeric:tabular-nums}
+  .big small{font:600 .9rem var(--body);letter-spacing:.08em;color:var(--mute);margin-right:8px}
+  .rate{font-size:.85rem;color:var(--mute);font-variant-numeric:tabular-nums}
+
+  .gap{padding:18px 22px;display:grid;gap:12px}
+  .gaphead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:baseline}
+  .gaphead b{font:700 1.5rem var(--display);color:var(--good);letter-spacing:-.02em}
+  .gaphead span{color:var(--mute);font-size:.92rem}
+  .bars{display:grid;gap:8px}
+  .bar{height:10px;border-radius:999px;background:var(--surface2);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:999px;width:0;transition:width .6s cubic-bezier(.3,.9,.3,1)}
+
+  .chartcard{padding:18px 18px 12px}
+  .charthead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;padding:0 4px 8px}
+  .charthead h2{font:600 1rem var(--display);margin:0}
+  .legend{display:flex;gap:16px;font-size:.85rem;color:var(--mute)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .legend i{width:14px;height:4px;border-radius:3px}
+  .wrap{position:relative}
+  svg{width:100%;height:auto;display:block;touch-action:pan-y}
+  .tt{position:absolute;top:8px;pointer-events:none;opacity:0;transition:opacity .12s;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:12px;padding:10px 12px;font-size:.82rem;min-width:170px;z-index:2;font-variant-numeric:tabular-nums}
+  .tt .d{color:var(--mute);margin-bottom:6px;font-weight:500}
+  .tt .r{display:flex;justify-content:space-between;gap:14px;align-items:center}
+  .tt .r b{font:600 .95rem var(--display)}
+  .tt .g{margin-top:6px;padding-top:6px;border-top:1px solid var(--line);color:var(--good);font-weight:600}
+  .hint{color:var(--mute);font-size:.8rem;padding:2px 4px 4px}
+  .note{font-size:.78rem;color:var(--mute);margin:4px 4px 0;max-width:80ch}
   .warn{color:var(--warn)}
+  .pulse{animation:pulse 2s ease-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes pulse{0%{transform:scale(1);opacity:.55}100%{transform:scale(3);opacity:0}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <main>
-  <h1>🇪🇺 → 🇦🇷 Euro to Argentine Peso</h1>
-  <p class="sub">Official rate vs. blue (informal) rate, with history. Enter euros or US dollars.</p>
+  <header>
+    <div class="eyebrow"><i></i>Argentine peso · live rates</div>
+    <h1>Euros to pesos: <span class="a">official</span> vs <span class="b">blue</span></h1>
+    <p class="sub">See what your money is worth at the bank rate and on the street, and how the gap has moved. Switch between euros and US dollars.</p>
+  </header>
 
-  <div class="controls">
-    <div><label for="amt">Amount</label>
-      <div class="amt"><span id="sym">€</span><input id="amt" type="number" inputmode="decimal" min="0" step="any" value="20"></div></div>
-    <div><label>Currency</label>
-      <div class="seg" id="cur">
-        <button data-c="EUR" aria-pressed="true">€ Euro</button><button data-c="USD">$ Dollar</button>
-      </div></div>
-    <div><label>Period</label>
-      <div class="seg" id="range">
-        <button data-d="30">1M</button><button data-d="90" aria-pressed="true">3M</button>
-        <button data-d="180">6M</button><button data-d="365">1Y</button><button data-d="1095">3Y</button>
-      </div></div>
-  </div>
+  <section class="panel" aria-label="Controls">
+    <div>
+      <label for="amt">You have</label>
+      <div class="amt"><span class="sym" id="sym">€</span><input id="amt" type="number" inputmode="decimal" min="0" step="any" value="100" aria-label="Amount"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="stack">
+      <div><span class="lbl">Currency</span>
+        <div class="seg" id="cur"><span class="thumb"></span>
+          <button data-c="EUR" aria-pressed="true">€ Euro</button><button data-c="USD" aria-pressed="false">$ US dollar</button>
+        </div></div>
+      <div><span class="lbl">History</span>
+        <div class="seg" id="range"><span class="thumb"></span>
+          <button data-d="30" aria-pressed="false">1M</button><button data-d="90" aria-pressed="true">3M</button>
+          <button data-d="180" aria-pressed="false">6M</button><button data-d="365" aria-pressed="false">1Y</button><button data-d="1095" aria-pressed="false">3Y</button>
+        </div></div>
+    </div>
+  </section>
 
-  <div class="grid">
-    <div class="card"><div class="tag"><i class="dot" style="background:var(--off)"></i>Official</div>
-      <div class="big" id="offAmt">…</div><div class="rate" id="offRate"></div></div>
-    <div class="card"><div class="tag"><i class="dot" style="background:var(--blue)"></i>Blue</div>
-      <div class="big" id="blueAmt">…</div><div class="rate" id="blueRate"></div></div>
-  </div>
-  <div class="card gap" id="gap"></div>
+  <section class="grid">
+    <article class="card off"><div class="tag"><i class="dot"></i>Official</div>
+      <div class="big"><small>ARS</small><span class="n" id="offAmt">…</span></div><div class="rate" id="offRate"></div></article>
+    <article class="card blue"><div class="tag"><i class="dot"></i>Blue<span class="best">MORE PESOS</span></div>
+      <div class="big"><small>ARS</small><span class="n" id="blueAmt">…</span></div><div class="rate" id="blueRate"></div></article>
+  </section>
 
-  <div class="card">
-    <div class="tag" id="chartTitle">Value of the amount over time (ARS)</div>
-    <svg id="chart" viewBox="0 0 800 340" role="img" aria-label="Line chart of official and blue values"></svg>
-    <div class="tip" id="tip">Hover or tap the chart for a day's values.</div>
-  </div>
+  <section class="card gap">
+    <div class="gaphead"><b id="gapPct">…</b><span id="gapTxt"></span></div>
+    <div class="bars">
+      <div class="bar"><i id="barOff" style="background:var(--off)"></i></div>
+      <div class="bar"><i id="barBlue" style="background:var(--blue)"></i></div>
+    </div>
+  </section>
+
+  <section class="card chartcard">
+    <div class="charthead"><h2 id="chartTitle">Value over time</h2>
+      <div class="legend"><span><i style="background:var(--off)"></i>Official</span><span><i style="background:var(--blue)"></i>Blue</span></div></div>
+    <div class="wrap" id="wrap">
+      <svg id="chart" viewBox="0 0 800 340" role="img" aria-label="Line chart of the official and blue values over time"></svg>
+      <div class="tt" id="tt"></div>
+    </div>
+    <div class="hint">Hover or touch the chart to read a day's values.</div>
+  </section>
   <p class="note" id="note"></p>
 </main>
 
@@ -75,6 +163,7 @@ const $ = id => document.getElementById(id);
 const fmt = (n, d=0) => n.toLocaleString('en-GB', {minimumFractionDigits:d, maximumFractionDigits:d});
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const iso = d => d.toISOString().slice(0,10);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let days = 90, series = null, demo = false, cur = 'EUR';
 const view = p => cur==='EUR' ? {date:p.date,o:p.offEur,b:p.blueEur,fx:p.eurusd} : {date:p.date,o:p.official,b:p.blue,fx:1};
 const sym = () => cur==='EUR' ? '€' : 'US$';
@@ -110,57 +199,102 @@ function demoData(){ // offline fallback so the UI still works; clearly flagged
   return out;
 }
 
+// Count-up so numbers glide instead of jumping.
+function tween(el, to){
+  const from = el._v ?? to; el._v = to; cancelAnimationFrame(el._raf);
+  if (reduce || from === to){ el.textContent = fmt(to); return; }
+  const t0 = performance.now(), dur = 450;
+  const step = now => { const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3);
+    el.textContent = fmt(from+(to-from)*e); if(k<1) el._raf = requestAnimationFrame(step); };
+  el._raf = requestAnimationFrame(step);
+}
+
+function placeThumb(seg){
+  const b = seg.querySelector('[aria-pressed=true]'), t = seg.querySelector('.thumb');
+  if(b){ t.style.left = b.offsetLeft+'px'; t.style.width = b.offsetWidth+'px'; }
+}
+
+function buildChips(){
+  const vals = cur==='EUR' ? [10,20,50,100,500] : [10,20,50,100,500];
+  const amt = parseFloat($('amt').value);
+  $('chips').innerHTML = vals.map(v=>`<button class="chip" data-v="${v}" aria-pressed="${v===amt}">${sym()}${v}</button>`).join('');
+}
+
 function render(){
   if(!series) return;
   const amt = Math.max(0, parseFloat($('amt').value)||0);
-  const last = view(series[series.length-1]), usd = series[series.length-1];
-  $('offAmt').textContent = '$ '+fmt(amt*last.o);
-  $('blueAmt').textContent = '$ '+fmt(amt*last.b);
-  $('offRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.o,2)} ARS (USD ${fmt(usd.official,0)} × ${fmt(last.fx,4)})` : `US$1 = ${fmt(last.o,2)} ARS`;
-  $('blueRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.b,2)} ARS (USD ${fmt(usd.blue,0)} × ${fmt(last.fx,4)})` : `US$1 = ${fmt(last.b,2)} ARS`;
+  const lastRaw = series[series.length-1], last = view(lastRaw);
+  tween($('offAmt'), amt*last.o); tween($('blueAmt'), amt*last.b);
+  $('offRate').textContent  = cur==='EUR' ? `1 € = ${fmt(last.o,2)} ARS  ·  USD ${fmt(lastRaw.official,0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.o,2)} ARS`;
+  $('blueRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.b,2)} ARS  ·  USD ${fmt(lastRaw.blue,0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.b,2)} ARS`;
   const gap = (last.b/last.o-1)*100, extra = amt*(last.b-last.o);
-  $('gap').innerHTML = `Blue gives <b>${fmt(gap,1)}%</b> more — <b>$ ${fmt(extra)}</b> extra on ${sym()}${fmt(amt,2)}. <span class="rate">As of ${last.date}</span>`;
-  $('chartTitle').textContent = `What ${sym()}${fmt(amt,2)} is worth in ARS — last ${$('range').querySelector('[aria-pressed=true]').textContent}`;
+  $('gapPct').textContent = `+${fmt(gap,1)}% on blue`;
+  $('gapTxt').textContent = `${fmt(extra)} extra pesos on ${sym()}${fmt(amt,2)} · as of ${last.date}`;
+  $('barOff').style.width = (last.o/last.b*100)+'%'; $('barBlue').style.width = '100%';
   $('sym').textContent = cur==='EUR' ? '€' : '$';
+  const per = $('range').querySelector('[aria-pressed=true]').textContent;
+  $('chartTitle').textContent = `${sym()}${fmt(amt,2)} in pesos, last ${per}`;
+  buildChips();
   draw(series.slice(-days).map(view), amt);
 }
 
 function draw(pts, amt){
-  const W=800,H=340,m={l:64,r:12,t:12,b:26};
+  const W=800,H=340,m={l:62,r:18,t:14,b:28};
   const ys = pts.flatMap(p=>[p.o*amt,p.b*amt]);
-  let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo||hi||1)*.08; lo=Math.max(0,lo-pad); hi+=pad;
+  let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo||hi||1)*.12; lo=Math.max(0,lo-pad); hi+=pad;
   const x=i=>m.l+(W-m.l-m.r)*i/(pts.length-1), y=v=>H-m.b-(H-m.t-m.b)*(v-lo)/(hi-lo);
-  const path=k=>pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]*amt).toFixed(1)).join('');
+  const line=k=>pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]*amt).toFixed(1)).join('');
+  const area=k=>line(k)+`L${x(pts.length-1).toFixed(1)} ${H-m.b}L${m.l} ${H-m.b}Z`;
+  const mute=css('--mute'), grid=css('--line'), off=css('--off'), blue=css('--blue'), surf=css('--surface');
   let g='';
   for(let i=0;i<=4;i++){ const v=lo+(hi-lo)*i/4, yy=y(v);
-    g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="${css('--line')}"/><text x="${m.l-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="${css('--mute')}">${fmt(v)}</text>`; }
+    g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-dasharray="${i?'2 5':'0'}"/><text x="${m.l-10}" y="${yy+4}" text-anchor="end" font-size="11" fill="${mute}">${fmt(v)}</text>`; }
   for(let i=0;i<=4;i++){ const idx=Math.round((pts.length-1)*i/4);
-    g+=`<text x="${x(idx)}" y="${H-6}" text-anchor="${i==0?'start':i==4?'end':'middle'}" font-size="11" fill="${css('--mute')}">${pts[idx].date}</text>`; }
-  $('chart').innerHTML = g +
-    `<path d="${path('o')}" fill="none" stroke="${css('--off')}" stroke-width="2.2"/>
-     <path d="${path('b')}" fill="none" stroke="${css('--blue')}" stroke-width="2.2"/>
-     <line id="cur" y1="${m.t}" y2="${H-m.b}" stroke="${css('--mute')}" stroke-dasharray="3" opacity="0"/>
+    g+=`<text x="${x(idx)}" y="${H-7}" text-anchor="${i==0?'start':i==4?'end':'middle'}" font-size="11" fill="${mute}">${pts[idx].date}</text>`; }
+  const n=pts.length-1;
+  $('chart').innerHTML = `<defs>
+    <linearGradient id="gO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${off}" stop-opacity=".28"/><stop offset="1" stop-color="${off}" stop-opacity="0"/></linearGradient>
+    <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${blue}" stop-opacity=".28"/><stop offset="1" stop-color="${blue}" stop-opacity="0"/></linearGradient></defs>` + g +
+    `<path d="${area('o')}" fill="url(#gO)"/><path d="${area('b')}" fill="url(#gB)"/>
+     <path d="${line('o')}" fill="none" stroke="${off}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+     <path d="${line('b')}" fill="none" stroke="${blue}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+     <circle class="pulse" cx="${x(n)}" cy="${y(pts[n].o*amt)}" r="4" fill="${off}"/><circle cx="${x(n)}" cy="${y(pts[n].o*amt)}" r="4.5" fill="${off}" stroke="${surf}" stroke-width="2"/>
+     <circle class="pulse" cx="${x(n)}" cy="${y(pts[n].b*amt)}" r="4" fill="${blue}"/><circle cx="${x(n)}" cy="${y(pts[n].b*amt)}" r="4.5" fill="${blue}" stroke="${surf}" stroke-width="2"/>
+     <line id="cur" y1="${m.t}" y2="${H-m.b}" stroke="${mute}" stroke-dasharray="3 4" opacity="0"/>
+     <circle id="d1" r="5" fill="${off}" stroke="${surf}" stroke-width="2" opacity="0"/><circle id="d2" r="5" fill="${blue}" stroke="${surf}" stroke-width="2" opacity="0"/>
      <rect id="hit" x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent"/>`;
-  const hit=$('chart').querySelector('#hit'), cur=$('chart').querySelector('#cur');
-  const move=e=>{ const r=$('chart').getBoundingClientRect(), cx=(e.touches?e.touches[0].clientX:e.clientX);
-    const px=(cx-r.left)/r.width*W; const i=Math.max(0,Math.min(pts.length-1,Math.round((px-m.l)/(W-m.l-m.r)*(pts.length-1))));
-    const p=pts[i]; cur.setAttribute('x1',x(i)); cur.setAttribute('x2',x(i)); cur.setAttribute('opacity',1);
-    $('tip').innerHTML=`${p.date} — Official <b style="color:${css('--off')}">$ ${fmt(p.o*amt)}</b> · Blue <b style="color:${css('--blue')}">$ ${fmt(p.b*amt)}</b> · gap ${fmt((p.b/p.o-1)*100,1)}%`; };
-  hit.addEventListener('mousemove',move); hit.addEventListener('touchmove',move,{passive:true}); hit.addEventListener('touchstart',move,{passive:true});
+  const svg=$('chart'), hit=svg.querySelector('#hit'), curL=svg.querySelector('#cur'), d1=svg.querySelector('#d1'), d2=svg.querySelector('#d2'), tt=$('tt');
+  const show=e=>{ const r=svg.getBoundingClientRect(), cx=e.touches?e.touches[0].clientX:e.clientX;
+    const px=(cx-r.left)/r.width*W, i=Math.max(0,Math.min(n,Math.round((px-m.l)/(W-m.l-m.r)*n))), p=pts[i];
+    curL.setAttribute('x1',x(i)); curL.setAttribute('x2',x(i)); curL.setAttribute('opacity',1);
+    d1.setAttribute('cx',x(i)); d1.setAttribute('cy',y(p.o*amt)); d2.setAttribute('cx',x(i)); d2.setAttribute('cy',y(p.b*amt)); d1.setAttribute('opacity',1); d2.setAttribute('opacity',1);
+    tt.innerHTML=`<div class="d">${p.date}</div>
+      <div class="r"><span style="color:${off}">● Official</span><b>${fmt(p.o*amt)}</b></div>
+      <div class="r"><span style="color:${blue}">● Blue</span><b>${fmt(p.b*amt)}</b></div>
+      <div class="g">+${fmt((p.b/p.o-1)*100,1)}% on blue</div>`;
+    const pct=x(i)/W*100; tt.style.left = pct>58 ? `calc(${pct}% - ${tt.offsetWidth+14}px)` : `calc(${pct}% + 14px)`; tt.style.opacity=1; };
+  const hide=()=>{ curL.setAttribute('opacity',0); d1.setAttribute('opacity',0); d2.setAttribute('opacity',0); tt.style.opacity=0; };
+  hit.addEventListener('mousemove',show); hit.addEventListener('touchstart',show,{passive:true}); hit.addEventListener('touchmove',show,{passive:true});
+  hit.addEventListener('mouseleave',hide); hit.addEventListener('touchend',hide);
 }
 
+function segInit(seg, onPick){
+  seg.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+    seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); placeThumb(seg); onPick(b); });
+}
+segInit($('cur'), b=>{ cur=b.dataset.c; render(); });
+segInit($('range'), b=>{ days=+b.dataset.d; render(); });
+$('chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; $('amt').value=b.dataset.v; render(); });
 $('amt').addEventListener('input', render);
-$('range').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
-  days=+b.dataset.d; $('range').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); render(); });
-$('cur').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
-  cur=b.dataset.c; $('cur').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); render(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+const thumbs=()=>{ placeThumb($('cur')); placeThumb($('range')); };
+addEventListener('resize', thumbs); thumbs(); document.fonts && document.fonts.ready.then(thumbs);
 
 (async()=>{
-  try{ series = await load(); $('note').textContent='Rates: ARS "venta" (selling) rate per US dollar from ArgentinaDatos (daily closing values, the same source for the whole chart), times the ECB EUR/USD reference rate (Frankfurter). Euro value = USD rate × EUR/USD. Real-life cash exchange rates and spreads will differ.'; }
+  try{ series = await load(); $('note').textContent='Rates: ARS "venta" (selling) rate per US dollar from ArgentinaDatos (daily values, one source for the whole chart), times the ECB EUR/USD reference rate from Frankfurter. Euro value = USD rate × EUR/USD. Real-life cash exchange rates and spreads will differ.'; }
   catch(err){ console.error(err); demo=true; series=demoData();
-    $('note').innerHTML='<span class="warn"><b>Could not reach the live rate APIs</b> — showing made-up demo numbers. Check your connection and reload.</span>'; }
-  render();
+    $('note').innerHTML='<span class="warn"><b>Could not reach the live rate APIs.</b> Showing made-up demo numbers. Check your connection and reload.</span>'; }
+  render(); thumbs();
 })();
 </script>
 </body>
