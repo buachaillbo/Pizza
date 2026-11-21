@@ -35,15 +35,21 @@
   header{padding:4px 2px 8px}
   .eyebrow{font:600 .72rem/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);display:flex;gap:8px;align-items:center}
   .eyebrow i{width:22px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--off),var(--blue))}
-  h1{font:700 clamp(1.7rem,4.6vw,2.6rem)/1.08 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+  h1{font:700 clamp(1.7rem,4.6vw,2.6rem)/1.08 var(--display);letter-spacing:-.02em;margin:10px 0 0;text-wrap:balance}
   h1 .a{color:var(--off)} h1 .b{color:var(--blue)}
-  .sub{color:var(--mute);margin:0;max-width:60ch}
 
   .panel,.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}
   .panel{padding:18px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px 24px}
   @media(max-width:700px){.panel{grid-template-columns:1fr}}
   label,.lbl{display:block;font:600 .72rem/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0 0 9px}
 
+  .lblrow{display:flex;justify-content:space-between;align-items:center;margin:-10px 0 -1px;gap:8px}
+  .lblrow label{margin:0}
+  .swap{display:inline-flex;align-items:center;gap:8px;font:600 .85rem var(--body);color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:7px 14px 7px 10px;cursor:pointer;transition:border-color .15s,background .15s}
+  .swap:hover{border-color:var(--off)}
+  .swap svg{width:18px;height:18px;transition:transform .4s cubic-bezier(.3,.9,.3,1)}
+  .swap[data-flip="1"] svg{transform:rotate(180deg)}
+  .best[hidden]{display:none}
   .amt{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid var(--line);border-radius:16px;padding:6px 16px;transition:border-color .15s,box-shadow .15s}
   .amt:focus-within{border-color:var(--off);box-shadow:0 0 0 4px var(--off-soft)}
   .amt .sym{font:600 1.5rem var(--display);color:var(--mute);min-width:1.6ch}
@@ -108,13 +114,14 @@
 <main>
   <header>
     <div class="eyebrow"><i></i>Argentine peso · live rates</div>
-    <h1>Euros to pesos: <span class="a">official</span> vs <span class="b">blue</span></h1>
-    <p class="sub">See what your money is worth at the bank rate and on the street, and how the gap has moved. Switch between euros and US dollars.</p>
+    <h1><span id="h1a">Euros to pesos</span>: <span class="a">official</span> vs <span class="b">blue</span></h1>
   </header>
 
   <section class="panel" aria-label="Controls">
     <div>
-      <label for="amt">You have</label>
+      <div class="lblrow"><label for="amt">You have</label>
+        <button class="swap" id="swap" type="button" data-flip="0" aria-label="Flip direction between foreign currency and pesos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>Flip</button></div>
       <div class="amt"><span class="sym" id="sym">€</span><input id="amt" type="number" inputmode="decimal" min="0" step="any" value="100" aria-label="Amount"></div>
       <div class="chips" id="chips"></div>
     </div>
@@ -132,10 +139,10 @@
   </section>
 
   <section class="grid">
-    <article class="card off"><div class="tag"><i class="dot"></i>Official</div>
-      <div class="big"><small>ARS</small><span class="n" id="offAmt">…</span></div><div class="rate" id="offRate"></div></article>
-    <article class="card blue"><div class="tag"><i class="dot"></i>Blue<span class="best">MORE PESOS</span></div>
-      <div class="big"><small>ARS</small><span class="n" id="blueAmt">…</span></div><div class="rate" id="blueRate"></div></article>
+    <article class="card off"><div class="tag"><i class="dot"></i>Official<span class="best" id="bestOff" hidden></span></div>
+      <div class="big"><small id="offUnit">ARS</small><span class="n" id="offAmt">…</span></div><div class="rate" id="offRate"></div></article>
+    <article class="card blue"><div class="tag"><i class="dot"></i>Blue<span class="best" id="bestBlue"></span></div>
+      <div class="big"><small id="blueUnit">ARS</small><span class="n" id="blueAmt">…</span></div><div class="rate" id="blueRate"></div></article>
   </section>
 
   <section class="card gap">
@@ -199,13 +206,16 @@ function demoData(){ // offline fallback so the UI still works; clearly flagged
   return out;
 }
 
+let dir = 'fwd'; // fwd: euro/dollar -> pesos, rev: pesos -> euro/dollar
+const conv = (amt, rate) => dir==='fwd' ? amt*rate : (rate ? amt/rate : 0);
+
 // Count-up so numbers glide instead of jumping.
-function tween(el, to){
+function tween(el, to, d){
   const from = el._v ?? to; el._v = to; cancelAnimationFrame(el._raf);
-  if (reduce || from === to){ el.textContent = fmt(to); return; }
+  if (reduce || from === to){ el.textContent = fmt(to,d); return; }
   const t0 = performance.now(), dur = 450;
   const step = now => { const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3);
-    el.textContent = fmt(from+(to-from)*e); if(k<1) el._raf = requestAnimationFrame(step); };
+    el.textContent = fmt(from+(to-from)*e,d); if(k<1) el._raf = requestAnimationFrame(step); };
   el._raf = requestAnimationFrame(step);
 }
 
@@ -215,40 +225,52 @@ function placeThumb(seg){
 }
 
 function buildChips(){
-  const vals = cur==='EUR' ? [10,20,50,100,500] : [10,20,50,100,500];
+  const short = v => v>=1e6 ? (v/1e6)+'M' : v>=1e3 ? (v/1e3)+'k' : String(v);
+  const vals = dir==='fwd' ? [10,20,50,100,500] : [10000,50000,100000,500000,1000000];
   const amt = parseFloat($('amt').value);
-  $('chips').innerHTML = vals.map(v=>`<button class="chip" data-v="${v}" aria-pressed="${v===amt}">${sym()}${v}</button>`).join('');
+  $('chips').innerHTML = vals.map(v=>`<button class="chip" data-v="${v}" aria-pressed="${v===amt}">${dir==='fwd'?sym()+v:short(v)}</button>`).join('');
 }
 
 function render(){
   if(!series) return;
-  const amt = Math.max(0, parseFloat($('amt').value)||0);
+  const amt = Math.max(0, parseFloat($('amt').value)||0), d = dir==='fwd' ? 0 : 2;
   const lastRaw = series[series.length-1], last = view(lastRaw);
-  tween($('offAmt'), amt*last.o); tween($('blueAmt'), amt*last.b);
+  const vo = conv(amt,last.o), vb = conv(amt,last.b);
+  const name = cur==='EUR' ? 'Euros' : 'Dollars';
+  const unit = dir==='fwd' ? 'ARS' : sym();
+  $('h1a').textContent = dir==='fwd' ? `${name} to pesos` : `Pesos to ${name.toLowerCase()}`;
+  $('offUnit').textContent = unit; $('blueUnit').textContent = unit;
+  tween($('offAmt'), vo, d); tween($('blueAmt'), vb, d);
   $('offRate').textContent  = cur==='EUR' ? `1 € = ${fmt(last.o,2)} ARS  ·  USD ${fmt(lastRaw.official,0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.o,2)} ARS`;
   $('blueRate').textContent = cur==='EUR' ? `1 € = ${fmt(last.b,2)} ARS  ·  USD ${fmt(lastRaw.blue,0)} × ${fmt(last.fx,4)}` : `US$1 = ${fmt(last.b,2)} ARS`;
-  const gap = (last.b/last.o-1)*100, extra = amt*(last.b-last.o);
-  $('gapPct').textContent = `+${fmt(gap,1)}% on blue`;
-  $('gapTxt').textContent = `${fmt(extra)} extra pesos on ${sym()}${fmt(amt,2)} · as of ${last.date}`;
-  $('barOff').style.width = (last.o/last.b*100)+'%'; $('barBlue').style.width = '100%';
-  $('sym').textContent = cur==='EUR' ? '€' : '$';
+  const gap = (last.b/last.o-1)*100, extra = Math.abs(vb-vo);
+  $('gapPct').textContent = `+${fmt(gap,1)}% on ${dir==='fwd'?'blue':'official'}`;
+  $('gapTxt').textContent = dir==='fwd'
+    ? `${fmt(extra)} extra pesos on ${sym()}${fmt(amt,2)} · as of ${last.date}`
+    : `${sym()}${fmt(extra,2)} extra on ARS ${fmt(amt)} · as of ${last.date}`;
+  const mx = Math.max(vo,vb) || 1;
+  $('barOff').style.width = (vo/mx*100)+'%'; $('barBlue').style.width = (vb/mx*100)+'%';
+  const more = dir==='fwd' ? 'MORE PESOS' : 'MORE '+name.toUpperCase();
+  $('bestBlue').textContent = more; $('bestOff').textContent = more;
+  $('bestBlue').hidden = dir!=='fwd'; $('bestOff').hidden = dir!=='rev';
+  $('sym').textContent = dir==='fwd' ? (cur==='EUR' ? '€' : '$') : 'ARS';
   const per = $('range').querySelector('[aria-pressed=true]').textContent;
-  $('chartTitle').textContent = `${sym()}${fmt(amt,2)} in pesos, last ${per}`;
+  $('chartTitle').textContent = dir==='fwd' ? `${sym()}${fmt(amt,2)} in pesos, last ${per}` : `ARS ${fmt(amt)} in ${name.toLowerCase()}, last ${per}`;
   buildChips();
-  draw(series.slice(-days).map(view), amt);
+  draw(series.slice(-days).map(view).map(p=>({date:p.date,o:conv(amt,p.o),b:conv(amt,p.b)})), d);
 }
 
-function draw(pts, amt){
+function draw(pts, dd){
   const W=800,H=340,m={l:62,r:18,t:14,b:28};
-  const ys = pts.flatMap(p=>[p.o*amt,p.b*amt]);
+  const ys = pts.flatMap(p=>[p.o,p.b]);
   let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo||hi||1)*.12; lo=Math.max(0,lo-pad); hi+=pad;
   const x=i=>m.l+(W-m.l-m.r)*i/(pts.length-1), y=v=>H-m.b-(H-m.t-m.b)*(v-lo)/(hi-lo);
-  const line=k=>pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]*amt).toFixed(1)).join('');
+  const line=k=>pts.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]).toFixed(1)).join('');
   const area=k=>line(k)+`L${x(pts.length-1).toFixed(1)} ${H-m.b}L${m.l} ${H-m.b}Z`;
   const mute=css('--mute'), grid=css('--line'), off=css('--off'), blue=css('--blue'), surf=css('--surface');
   let g='';
   for(let i=0;i<=4;i++){ const v=lo+(hi-lo)*i/4, yy=y(v);
-    g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-dasharray="${i?'2 5':'0'}"/><text x="${m.l-10}" y="${yy+4}" text-anchor="end" font-size="11" fill="${mute}">${fmt(v)}</text>`; }
+    g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-dasharray="${i?'2 5':'0'}"/><text x="${m.l-10}" y="${yy+4}" text-anchor="end" font-size="11" fill="${mute}">${fmt(v,dd)}</text>`; }
   for(let i=0;i<=4;i++){ const idx=Math.round((pts.length-1)*i/4);
     g+=`<text x="${x(idx)}" y="${H-7}" text-anchor="${i==0?'start':i==4?'end':'middle'}" font-size="11" fill="${mute}">${pts[idx].date}</text>`; }
   const n=pts.length-1;
@@ -258,8 +280,8 @@ function draw(pts, amt){
     `<path d="${area('o')}" fill="url(#gO)"/><path d="${area('b')}" fill="url(#gB)"/>
      <path d="${line('o')}" fill="none" stroke="${off}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
      <path d="${line('b')}" fill="none" stroke="${blue}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
-     <circle class="pulse" cx="${x(n)}" cy="${y(pts[n].o*amt)}" r="4" fill="${off}"/><circle cx="${x(n)}" cy="${y(pts[n].o*amt)}" r="4.5" fill="${off}" stroke="${surf}" stroke-width="2"/>
-     <circle class="pulse" cx="${x(n)}" cy="${y(pts[n].b*amt)}" r="4" fill="${blue}"/><circle cx="${x(n)}" cy="${y(pts[n].b*amt)}" r="4.5" fill="${blue}" stroke="${surf}" stroke-width="2"/>
+     <circle class="pulse" cx="${x(n)}" cy="${y(pts[n].o)}" r="4" fill="${off}"/><circle cx="${x(n)}" cy="${y(pts[n].o)}" r="4.5" fill="${off}" stroke="${surf}" stroke-width="2"/>
+     <circle class="pulse" cx="${x(n)}" cy="${y(pts[n].b)}" r="4" fill="${blue}"/><circle cx="${x(n)}" cy="${y(pts[n].b)}" r="4.5" fill="${blue}" stroke="${surf}" stroke-width="2"/>
      <line id="cur" y1="${m.t}" y2="${H-m.b}" stroke="${mute}" stroke-dasharray="3 4" opacity="0"/>
      <circle id="d1" r="5" fill="${off}" stroke="${surf}" stroke-width="2" opacity="0"/><circle id="d2" r="5" fill="${blue}" stroke="${surf}" stroke-width="2" opacity="0"/>
      <rect id="hit" x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent"/>`;
@@ -267,11 +289,11 @@ function draw(pts, amt){
   const show=e=>{ const r=svg.getBoundingClientRect(), cx=e.touches?e.touches[0].clientX:e.clientX;
     const px=(cx-r.left)/r.width*W, i=Math.max(0,Math.min(n,Math.round((px-m.l)/(W-m.l-m.r)*n))), p=pts[i];
     curL.setAttribute('x1',x(i)); curL.setAttribute('x2',x(i)); curL.setAttribute('opacity',1);
-    d1.setAttribute('cx',x(i)); d1.setAttribute('cy',y(p.o*amt)); d2.setAttribute('cx',x(i)); d2.setAttribute('cy',y(p.b*amt)); d1.setAttribute('opacity',1); d2.setAttribute('opacity',1);
+    d1.setAttribute('cx',x(i)); d1.setAttribute('cy',y(p.o)); d2.setAttribute('cx',x(i)); d2.setAttribute('cy',y(p.b)); d1.setAttribute('opacity',1); d2.setAttribute('opacity',1);
     tt.innerHTML=`<div class="d">${p.date}</div>
-      <div class="r"><span style="color:${off}">● Official</span><b>${fmt(p.o*amt)}</b></div>
-      <div class="r"><span style="color:${blue}">● Blue</span><b>${fmt(p.b*amt)}</b></div>
-      <div class="g">+${fmt((p.b/p.o-1)*100,1)}% on blue</div>`;
+      <div class="r"><span style="color:${off}">● Official</span><b>${fmt(p.o,dd)}</b></div>
+      <div class="r"><span style="color:${blue}">● Blue</span><b>${fmt(p.b,dd)}</b></div>
+      <div class="g">+${fmt((Math.max(p.o,p.b)/Math.min(p.o,p.b)-1)*100,1)}% on ${dir==='fwd'?'blue':'official'}</div>`;
     const pct=x(i)/W*100; tt.style.left = pct>58 ? `calc(${pct}% - ${tt.offsetWidth+14}px)` : `calc(${pct}% + 14px)`; tt.style.opacity=1; };
   const hide=()=>{ curL.setAttribute('opacity',0); d1.setAttribute('opacity',0); d2.setAttribute('opacity',0); tt.style.opacity=0; };
   hit.addEventListener('mousemove',show); hit.addEventListener('touchstart',show,{passive:true}); hit.addEventListener('touchmove',show,{passive:true});
@@ -286,6 +308,10 @@ segInit($('cur'), b=>{ cur=b.dataset.c; render(); });
 segInit($('range'), b=>{ days=+b.dataset.d; render(); });
 $('chips').addEventListener('click', e=>{ const b=e.target.closest('.chip'); if(!b) return; $('amt').value=b.dataset.v; render(); });
 $('amt').addEventListener('input', render);
+$('swap').addEventListener('click', ()=>{ if(!series) return;
+  const amt = Math.max(0, parseFloat($('amt').value)||0), v = conv(amt, view(series[series.length-1]).o);
+  $('amt').value = dir==='fwd' ? Math.round(v) : Math.round(v*100)/100;
+  dir = dir==='fwd' ? 'rev' : 'fwd'; $('swap').dataset.flip = dir==='rev' ? 1 : 0; render(); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
 const thumbs=()=>{ placeThumb($('cur')); placeThumb($('range')); };
 addEventListener('resize', thumbs); thumbs(); document.fonts && document.fonts.ready.then(thumbs);
